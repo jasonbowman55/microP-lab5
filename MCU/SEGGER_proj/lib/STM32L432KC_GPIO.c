@@ -34,3 +34,10 @@ void togglePin(int pin) {
     // Use XOR to toggle
     GPIO->ODR ^= (1 << pin);
 }
+
+void enableGPIO(int pin_letter) {
+    switch(pin_letter){
+        case GPIO_PORT_A:
+            RCC->AHB2ENR
+    }
+}

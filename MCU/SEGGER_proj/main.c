@@ -1,33 +1,41 @@
-/*********************************************************************
-*                    SEGGER Microcontroller GmbH                     *
-*                        The Embedded Experts                        *
-**********************************************************************
-#include
--------------------------- END-OF-HEADER -----------------------------
+// Jason Bowman
+// jbowman@hmc.edu
+// 10-13-24
 
-File    : main.c
-Purpose : Generic application start
+// include global headers
+#include "studio.h"
+#include <stm32l432xx.h>
 
-*/
-
+// include internal headers
+#include "STM32L432KC_GPIO.h"
 #include "STM32L432KC_RCC.h"
+#include "STM32L432KC_TIM.h"
+#include "STM32L432KC_FLASH.h"
+#include "STM32L432KC_USART.h"
+#include "STM32L432KC_SPI.h"
 
-/*********************************************************************
-*
-*       main()
-*
-*  Function description
-*   Application entry point.
-*/
-int main(void) {
-  int i;
+// define pins
+#define A_IN_PIN PA1 //"FT_a" 5V capatible
+#define B_IN_PIN PA6 //"FT_a" 5V capatible
 
-  for (i = 0; i < 100; i++) {
-    printf("Hello World %d!\n", i);
-  }
-  do {
-    i++;
-  } while (1);
+
+void GPIOinit() {
+  gpioE
+  pinMode(A_IN_PIN, GPIO_INPUT);
+  RCC
+  pinMode(B_IN_PIN, GPIO_INPUT);
 }
 
-/*************************** End of file ****************************/
+
+
+
+
+
+
+
+
+
+
+int main(void) {
+
+}
