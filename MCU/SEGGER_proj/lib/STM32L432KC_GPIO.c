@@ -35,9 +35,30 @@ void togglePin(int pin) {
     GPIO->ODR ^= (1 << pin);
 }
 
-void enableGPIO(int pin_letter) {
-    switch(pin_letter){
-        case GPIO_PORT_A:
-            RCC->AHB2ENR
+void enableGPIO(int gpio_port_x) {
+    switch(gpio_port_x){
+      case GPIO_PORT_A: //input formats
+        RCC->AHB2ENR |= (1 << 0);
+        break;
+      case GPIO_PORT_B:
+        RCC->AHB2ENR |= (1 << 1);
+        break;
+      case GPIO_PORT_C:
+        RCC->AHB2ENR |= (1 << 2);
+        break;
     }
+}
+
+void disableGPIO(int gpio_port_x){
+  switch(gpio_port_x){
+    case GPIO_PORT_A: //input formats
+      RCC->AHB2ENR &= ~(1 << 0);
+      break;
+    case GPIO_PORT_B:
+      RCC->AHB2ENR &= ~(1 << 1);
+      break;
+    case GPIO_PORT_C:
+      RCC->AHB2ENR &= ~(1 << 2);
+      break;
+  }
 }
