@@ -5,6 +5,7 @@
 #define STM32L4_GPIO_H
 
 #include <stdint.h> // Include stdint header
+#include <stm32l432xx.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Definitions
@@ -57,5 +58,11 @@ int digitalRead(int pin);
 void digitalWrite(int pin, int val);
 
 void togglePin(int pin);
+
+void enableGPIO(int gpio_port_x); //added function into GPIO.c
+
+void disableGPIO(int gpio_port_x); //added function into GPIO.c
+
+//NOTE: in the .c header files, you need to include the high level call for all functions available so that when you include that .h in main.c, it can reference the corresponding .c and its related functions
 
 #endif
