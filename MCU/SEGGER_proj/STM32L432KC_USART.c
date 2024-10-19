@@ -25,6 +25,13 @@ USART_TypeDef * id2USARTbase(int USART_ID) { //return pointer to base register (
 }
 
 USART_TypeDef * initUSART(int USART_ID, int baud_rate) {
+  gpioEnable(GPIO_PORT_A);  // Enable clock for GPIOA
+  RCC->CR |= RCC_CR_HSION;  // Turn on HSI 16 MHz clock
+}
+
+
+
+USART_TypeDef * initUSART(int USART_ID, int baud_rate) {
     gpioEnable(GPIO_PORT_A);  // Enable clock for GPIOA
     RCC->CR |= RCC_CR_HSION;  // Turn on HSI 16 MHz clock
 
@@ -34,8 +41,6 @@ USART_TypeDef * initUSART(int USART_ID, int baud_rate) {
         case USART1_ID: //USART 1 base register
             RCC->APB2ENR |= RCC_APB2ENR_USART1EN; // Set clk tree to USART1EN
             RCC->CCIPR |= (0b10 << 0); // Set HSI16 (16 MHz) as USART clock source
-
-            GPIOA->AFR[1] |= (0b111 << GPIO_AFRH_AFSEL9_Pos) | (0b111 << GPIO_AFRH_AFSEL10_Pos);
 
             // Configure pin modes as ALT function
             pinMode(PA9, GPIO_ALT); // TX
@@ -50,9 +55,6 @@ USART_TypeDef * initUSART(int USART_ID, int baud_rate) {
             pinMode(PA2, GPIO_ALT); // TX
             pinMode(PA15, GPIO_ALT); // RX
 
-            // Configure correct alternate functions
-            GPIOA->AFR[0] |= (0b111 << GPIO_AFRL_AFSEL2_Pos);   //AF7
-            GPIOA->AFR[1] |= (0b011 << GPIO_AFRH_AFSEL15_Pos);  //AF3
             break;
     }
 
