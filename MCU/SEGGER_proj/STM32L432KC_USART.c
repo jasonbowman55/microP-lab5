@@ -1,7 +1,7 @@
 // STM32L432KC_USART.c
 // Source code for USART functions
 
-#include "STM32L432KC.h"
+#include "STM32L432KC_FLASH.h"
 #include "STM32L432KC_USART.h"
 #include "STM32L432KC_GPIO.h"
 #include "STM32L432KC_RCC.h"

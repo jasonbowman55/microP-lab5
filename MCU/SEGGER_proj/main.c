@@ -13,6 +13,7 @@
 #include "STM32L432KC_FLASH.h"
 #include "STM32L432KC_USART.h"
 #include "STM32L432KC_SPI.h"
+#include "STM32L432KC_TIM.h"
 
 // define pins
 #define A_IN_PIN PA8 //"FT_a" 5V capatible
@@ -47,16 +48,24 @@ void delayTIMinit() { //TIM2 = 1000Hz -> 1ms delay
 }
 
 void countTIMinit() { //TIM6 = SYSCLK = 4MHz
+  RCC->APB1ENR1 |= RCC_APB1ENR1_TIM6EN;
+
   TIM6->PSC &= ~(65535); //clear TIM6_PSC
-  TIM6->PSC |= (1); //do not use PSC
+  TIM6->PSC |= (1); //effectively do not use PSC
 
   TIM6->EGR |= (TIM_EGR_UG); //generate update event to update PSC
   TIM6->CR1 |= (TIM_CR1_CEN); //enable TIM6 counter
 }
 
+__enable_irq(); // enable global interupts
 
 
 
 int main(void) {
+ GPIOinit(); //initialize GPIOs
+ countTIMinit(); //TIM6 init
+
+
+  __enable_irq(); // enable global interupts
 
 }

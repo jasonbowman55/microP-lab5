@@ -1,5 +1,5 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="lab5_jb_segger" version="2" target="8">
+<solution Name="lab5_jb_segger" target="8" version="2">
   <configuration
     Name="Debug"
     c_preprocessor_definitions="DEBUG"
@@ -67,6 +67,8 @@
         <file file_name="lib/STM32L432KC_GPIO.h" />
         <file file_name="lib/STM32L432KC_RCC.c" />
         <file file_name="lib/STM32L432KC_RCC.h" />
+        <file file_name="STM32L432KC_USART.c" />
+        <file file_name="STM32L432KC_USART.h" />
       </folder>
       <file file_name="main.c" />
     </folder>
