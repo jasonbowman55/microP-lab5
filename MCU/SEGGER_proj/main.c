@@ -3,8 +3,7 @@
 // 10-13-24
 
 // include global headers
-#include "studio.h"
-#include <stm32l432xx.h>
+#include "stdio.h"
 
 // include internal headers
 #include "STM32L432KC_GPIO.h"
