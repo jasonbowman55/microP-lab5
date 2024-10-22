@@ -11,7 +11,7 @@
 #include "STM32L432KC_TIM.h"
 #include "STM32L432KC_FLASH.h"
 #include "STM32L432KC_USART.h"
-#include "STM32L432KC_SPI.h"
+//#include "STM32L432KC_SPI.h"
 #include "STM32L432KC_TIM.h"
 
 // define pins
@@ -20,14 +20,14 @@
 
 //Global variables
 #define interupt_flag     //the internal software flag that says there was an interupt that happened
-unsigned char direction   //1 = clockwise and 0 = counter clockwise
-int state                 //this tells you the state which the interupts are at (if Ainterupt and Binterupt are on or off) [0,1,2,3] encoding
-int PulseCount            //pulses per revolution (1 pulse is when A and B interupts both equal 1
-int rps                   //number of S it took for 1 revolution
-int msPR                  //number of ms it took for 1 revolution
+unsigned char direction;   //1 = clockwise and 0 = counter clockwise
+int state;                 //this tells you the state which the interupts are at (if Ainterupt and Binterupt are on or off) [0,1,2,3] encoding
+int PulseCount;            //pulses per revolution (1 pulse is when A and B interupts both equal 1
+int rps;                   //number of S it took for 1 revolution
+int msPR;                  //number of ms it took for 1 revolution
 int PPR = 360;            //NOTE: need to change likely through experimentation
-int A_on                  //internal flag saying that interupt A is triggered
-int B_on                  //internal flag saying that interupt B is triggered
+int A_on;                  //internal flag saying that interupt A is triggered
+int B_on;                  //internal flag saying that interupt B is triggered
 
 //********************************
 void GPIOinit() { //GPIO PA8 & PA6 enable
@@ -35,27 +35,11 @@ void GPIOinit() { //GPIO PA8 & PA6 enable
 
   // GPIO PA8 (A interupt)
   pinMode(A_IN_PIN, GPIO_INPUT); //set PA8 input mode as 
-  GPIOA->PUPDR |= _VAL2FLD(GPIO_PUPDR_PUPD8, 0b01) //set PA8 as pull up input
+  GPIOA->PUPDR |= _VAL2FLD(GPIO_PUPDR_PUPD8, 0b01); //set PA8 as pull up input
   
   // GPIO PA6 (B interupt)
   pinMode(B_IN_PIN, GPIO_INPUT); //set PA6 as input
-  GPIOA->PUPDR |= _VAL2FLD(GPIO_PUPDR_PUPD6, 0b01) //set PA6 as pull up input
-}
-
-void SYSCLKinit() { //SYSCLK = MSI (4MHz)
-  RCC->CR |= (RCC_CR_MSION); //make MSI the SYSCLK
-  RCC->CR &= ~(RCC_CR_MSIRANGE); //clear MSI range
-  RCC->CR |= _FLD2VAL(RCC_CR_MSIRANGE, 0b0110); //set MSI as defalut 4MHz
-}
-
-void countTIMinit() { //TIM6
-  RCC->APB1ENR1 |= RCC_APB1ENR1_TIM6EN;
-  TIM6->PSC &= ~(65535); //clear TIM6_PSC
-  uint32_t PSCval = uint32_t (SystemCoreClock/1000); //make counter 1ms
-  TIM6->PSC |= (PSCval); //effectively do not use PSC
-
-  TIM6->EGR |= (TIM_EGR_UG); //generate update event to update PSC
-  TIM6->CR1 |= (TIM_CR1_CEN); //enable TIM6 counter
+  GPIOA->PUPDR |= _VAL2FLD(GPIO_PUPDR_PUPD6, 0b01); //set PA6 as pull up input
 }
 
 void EXTIcfgr() { //configure external interrupts specific for this project
@@ -79,6 +63,8 @@ void delay(int ms) { // Function to create a delay using TIM6
 }
 
 void rps_calc(int state) { //calculates rps based on the state
+
+//maybe I could time the difference between the interupts with a timer then based on the magnitude and sign, you can tell the speed and direction. But if this is set to only trigger on some certain interupt, how would you determine the direction?
     
   //+1 to PulseCount every time A and B interupts are hi
   if (state == 3) {
@@ -96,10 +82,13 @@ void rps_calc(int state) { //calculates rps based on the state
 }
 //********************************
 
-int main(void) {
+void main(void) {
+  configurePLL();
+  configureClock();
   GPIOinit(); //initialize GPIOs
-  SYSCLKinit(); //initialize 4MHz MSI SYSCLK
-  countTIMinit(); //TIM6 init
+
+  RCC->APB1ENR1 |= RCC_APB1ENR1_TIM6EN; //configure TIM6 to be on
+  initTIM(TIM6); //initialize delay timer TIM6
 
   __enable_irq(); // enable global interupts
   
@@ -107,33 +96,26 @@ int main(void) {
 
   NVIC->ISER[0] |= (1 << EXTI9_5_IRQn); //turn on bitmask region relating to pins PA6 & PA8
   
-  rps_calc(int state); //calculated the rps and loop in here
+  rps_calc(state); //calculated the rps and loop in here
 
-  void updateDirection(int state) {
+  void updateDirection (int state) {
     if (A_on) {
+     delay(700);
+     printf("rps: %d\n", rps);
       switch(state) {
           case 0:
-              delay(700);
               printf("Direction: Clockwise\n");         // CW
-              printf("rps: %d\n", rps);
               break;
           case 1:
-              delay(700);
               printf("Direction: Counter-Clockwise\n"); // CC
-              printf("rps: %d\n", rps);
               break;
           case 2:
-              delay(700);
               printf("Direction: Counter-Clockwise\n"); // CC
-              printf("rps: %d\n", rps);
               break;
           case 3:
-              delay(700);
               printf("Direction: Clockwise\n");         // CW
-              printf("rps: %d\n", rps);
               break;
           default:
-              delay(700);
               printf("Unknown state\n");
               break;
       }
@@ -141,29 +123,22 @@ int main(void) {
     }
 
     if (B_on) {
+     delay(700);
+     printf("rps: %d\n", rps);
       switch(state) {
           case 0:
-              delay(700);
               printf("Direction: Counter-Clockwise\n"); // CC
-              printf("rps: %d\n", rps);
               break;
           case 1:
-              delay(700);
               printf("Direction: Clockwise\n");         // CW
-              printf("rps: %d\n", rps);
               break;
           case 2:
-              delay(700);
               printf("Direction: Counter-Clockwise\n"); // CC
-              printf("rps: %d\n", rps);
               break;
           case 3:
-              delay(700);
               printf("Direction: Clockwise\n");         // CW
-              printf("rps: %d\n", rps);
               break;
           default:
-              delay(700);
               printf("Unknown state\n");
               break;
       }
