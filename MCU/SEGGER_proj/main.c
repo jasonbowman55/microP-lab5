@@ -67,7 +67,7 @@ void rps_calc(int state) { //calculates rps based on the state
 //maybe I could time the difference between the interupts with a timer then based on the magnitude and sign, you can tell the speed and direction. But if this is set to only trigger on some certain interupt, how would you determine the direction?
     
   //+1 to PulseCount every time A and B interupts are hi
-  if (state == 3) {
+  if (state == 3) { //change
     PulseCount = PulseCount + 1;
   }
   /////
