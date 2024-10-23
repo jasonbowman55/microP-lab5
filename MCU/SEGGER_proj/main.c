@@ -117,7 +117,7 @@ int main(void) {
         // else calculations for motor speed
         }else {
           if(rpm == 0){
-            rpm1 = 1/(double)(PPR*abs(delta)*4/1000000.0);
+            rpm1 = 1/(double)(PPR*abs(delta)*4/1000.0);
             rpm2 = rpm1;
             rpm3 = rpm1;
             rpm4 = rpm1;
@@ -125,7 +125,7 @@ int main(void) {
             rpm1 = rpm2;
             rpm2 = rpm3;
             rpm3 = rpm4;
-            rpm4 = 1/(double)(PPR*abs(delta)*4/1000000.0);
+            rpm4 = 1/(double)(PPR*abs(delta)*4/1000.0);
           }
           rpm = (rpm1+rpm2+rpm3+rpm4)/4;
         }
@@ -133,8 +133,14 @@ int main(void) {
         
 
         printf("Revolutions per Second: %f\n", rpm);
-        printf("Delta: %d\n", delta);
 
+        printf("Delta: %d\n", delta);
+        
+        if (delta > 0) {
+          printf("Direction: Counter Clockwise\n");
+        } else {
+          printf("Direction: Clockwise\n");
+        }
     }
 }
 
@@ -156,7 +162,7 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
 
     if((Binterupt==1) && (Ainterupt==1)){ //if a pulse occurs
       delta = COUNT_TIM->CNT; //clock cycles going CW
-       printf("Delta1: %d\n", delta);
+       //printf("Delta1: %d\n", delta);
     }
     EXTI->PR1 |= (1 << 8); //clear the interupt flag
     COUNT_TIM->CNT = 0; //reset counter
@@ -169,7 +175,7 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
 
    if((Binterupt==1) && (Ainterupt==1)){ //if a pulse occurs
       delta = -COUNT_TIM->CNT; //clock cycles going CCW
-      printf("Delta2: %d\n", delta);
+      //printf("Delta2: %d\n", delta);
     }
     EXTI->PR1 |= (1 << 6); //clear the interupt flag
     COUNT_TIM->CNT = 0; //reset counter
