@@ -4,15 +4,47 @@
 
 // include global headers
 #include "stdio.h"
+//#include "STM32L432KC.h"
+
 
 // include internal headers
 #include "STM32L432KC_GPIO.h"
 #include "STM32L432KC_RCC.h"
 #include "STM32L432KC_TIM.h"
 #include "STM32L432KC_FLASH.h"
-#include "STM32L432KC_USART.h"
+//#include "STM32L432KC_USART.h"
 //#include "STM32L432KC_SPI.h"
 #include "STM32L432KC_TIM.h"
+
+
+
+
+// Necessary includes for printf to work
+#include "stm32l432xx.h"
+
+// Function used by printf to send characters to the laptop
+int _write(int file, char *ptr, int len) {
+  int i = 0;
+  for (i = 0; i < len; i++) {
+    ITM_SendChar((*ptr++));
+  }
+  return len;
+}
+
+//int main(void) {
+//  int i;
+
+//  for (i = 0; i < 100; i++) {
+// // printf function call
+//    printf("Hello World %d!\n", i);
+//  }
+//  do {
+//    i++;
+//  } while (1);
+//}
+
+
+
 
 // define pins
 #define A_IN_PIN PA8 //"FT_a" 5V capatible
@@ -82,7 +114,8 @@ void rps_calc(int state) { //calculates rps based on the state
 }
 //********************************
 
-void main(void) {
+int main(void) {
+  configureFlash();
   configurePLL();
   configureClock();
   GPIOinit(); //initialize GPIOs
