@@ -38,7 +38,7 @@ int _write(int file, char *ptr, int len) {
 int direction;             //1 = clockwise and 0 = counter clockwise
 unsigned int delta;                 //the number of 
 int rpm = 0;                   //number of S it took for 1 revolution
-//int PPR = 100;             //NOTE: need to find it in the data sheet
+int PPR = 120;             //NOTE: need to find it in the data sheet
 int still = 1;                 //1=not moving motor, 0=moving motor
 int A;
 int B;
@@ -70,19 +70,6 @@ void EXTIcfgr() {                   //configure external interrupts specific for
     EXTI->FTSR1 |= _VAL2FLD(EXTI_FTSR1_FT8, 1); 
 }
 
-//void delay(int ms) {                //Function to create a delay using TIM6
-//    for (int i = 0; i < ms; i++) {
-//        DELAY_TIM->CNT = 0;              //Reset the timer count
-//        while (DELAY_TIM->CNT < 1);      //Wait until the count reaches 1 (1 ms)
-//    }
-//}
-
-//void rpm_calc (delta) {         //calculate the RPS and Direction of the motor
-//  int ms_per_rev = fabs(delta) * PPR;   //time per revolution in ms
-//  int min_per_rev = ms_per_rev / 60000; //min per revolution
-//  rpm = 1 / min_per_rev;                //calculate rpm
-//}
-//********************************
 
 int main(void) {
   __enable_irq(); // enable global interupts
@@ -130,7 +117,7 @@ int main(void) {
         // else calculations for motor speed
         }else {
           if(rpm == 0){
-            rpm1 = 1/(double)(120*abs(delta)*4/1000000.0);
+            rpm1 = 1/(double)(PPR*abs(delta)*4/1000000.0);
             rpm2 = rpm1;
             rpm3 = rpm1;
             rpm4 = rpm1;
@@ -138,11 +125,13 @@ int main(void) {
             rpm1 = rpm2;
             rpm2 = rpm3;
             rpm3 = rpm4;
-            rpm4 = 1/(double)(120*abs(delta)*4/1000000.0);
+            rpm4 = 1/(double)(PPR*abs(delta)*4/1000000.0);
           }
           rpm = (rpm1+rpm2+rpm3+rpm4)/4;
         }
         
+        
+
         printf("Revolutions per Second: %f\n", rpm);
         printf("Delta: %d\n", delta);
 
