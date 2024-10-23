@@ -144,8 +144,8 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
   int Ainterupt = digitalRead(A_IN_PIN); //reading the value of PA8 through the on board 5V ADC
   int Binterupt = digitalRead(B_IN_PIN); //reading the value of PA6 through the on board 5V ADC
   //unsigned int initial_tim = COUNT_TIM->CNT;
-  A = Ainterupt;
-  B = COUNT_TIM->CNT;
+  //A = Ainterupt;
+  //B = COUNT_TIM->CNT;
 
   //if A interupt happens
   if (EXTI->PR1 & (1 << 8)){
