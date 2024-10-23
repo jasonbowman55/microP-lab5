@@ -37,8 +37,9 @@ int _write(int file, char *ptr, int len) {
 #define DELAY_TIM TIM6     //make TIM6 to be the delay timer
 int direction;             //1 = clockwise and 0 = counter clockwise
 int delta;                 //the number of 
-int rpm;                   //number of S it took for 1 revolution
+int rpm = 0;               //number of S it took for 1 revolution
 int PPR = 100;             //NOTE: need to find it in the data sheet
+int still = 1;
 
 //********************************
 void GPIOinit() {                   //GPIO PA8 & PA6 enable
@@ -96,22 +97,22 @@ int main(void) {
 
   NVIC->ISER[0] |= (1 << EXTI9_5_IRQn); //turn on bitmask region relating to pins PA6 & PA8
   
-  rpm_calc(detla); //calculated the rps and loop in here
+  rpm_calc(delta); //calculated the rps and loop in here
 
   if (still) {
-    delay(400)
+    delay(400);
     printf("Direction: N/A\n");
     printf("rps: %d\n", rpm);
   }
 
   if((!still) && (delta > 0)) {
-    delay(400)
+    delay(400);
     printf("Direction: Clockwise\n");
     printf("rps: %d\n", rpm);
   }
 
   if((!still) && (delta < 0)) {
-    delay(400)
+    delay(400);
     printf("Direction: Counter Clockwise\n");
     printf("rps: %d\n", rpm);
   }
