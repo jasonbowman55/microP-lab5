@@ -57,7 +57,7 @@ int state;                 //this tells you the state which the interupts are at
 int PulseCount;            //pulses per revolution (1 pulse is when A and B interupts both equal 1
 int rps;                   //number of S it took for 1 revolution
 int msPR;                  //number of ms it took for 1 revolution
-int PPR = 360;            //NOTE: need to change likely through experimentation
+int PPR = 100;            //NOTE: need to change likely through experimentation
 int A_on;                  //internal flag saying that interupt A is triggered
 int B_on;                  //internal flag saying that interupt B is triggered
 
@@ -95,43 +95,22 @@ void delay(int ms) { // Function to create a delay using TIM6
 }
 
 void rps_calc(int state) { //calculates rps based on the state
-
-//maybe I could time the difference between the interupts with a timer then based on the magnitude and sign, you can tell the speed and direction. But if this is set to only trigger on some certain interupt, how would you determine the direction?
-    
   //+1 to PulseCount every time A and B interupts are hi
-  if (state == 3) { //change
-    PulseCount = PulseCount + 1;
-  }
   /////
-
   //outputs how many seconds it took for one revolution
   while (PulseCount < PPR) {
+      if (state == 3) { //change
+    PulseCount = PulseCount + 1;
+    }
     delay(1); //delay 1ms
     msPR = msPR + 1;
     rps = msPR / 1000;
   }
   /////
 }
-//********************************
 
-int main(void) {
-  configureFlash();
-  configurePLL();
-  configureClock();
-  GPIOinit(); //initialize GPIOs
 
-  RCC->APB1ENR1 |= RCC_APB1ENR1_TIM6EN; //configure TIM6 to be on
-  initTIM(TIM6); //initialize delay timer TIM6
-
-  __enable_irq(); // enable global interupts
-  
-  EXTIcfgr(); //configure external interrupts specific for this project
-
-  NVIC->ISER[0] |= (1 << EXTI9_5_IRQn); //turn on bitmask region relating to pins PA6 & PA8
-  
-  rps_calc(state); //calculated the rps and loop in here
-
-  void updateDirection (int state) {
+void updateDirection (int state) {
     if (A_on) {
      delay(700);
      printf("rps: %d\n", rps);
@@ -178,6 +157,30 @@ int main(void) {
       B_on = 0;
     }
   }
+
+    
+
+//********************************
+
+int main(void) {
+  configureFlash();
+  configurePLL();
+  configureClock();
+  GPIOinit(); //initialize GPIOs
+
+  RCC->APB1ENR1 |= RCC_APB1ENR1_TIM6EN; //configure TIM6 to be on
+  initTIM(TIM6); //initialize delay timer TIM6
+
+  __enable_irq(); // enable global interupts
+  
+  EXTIcfgr(); //configure external interrupts specific for this project
+
+  NVIC->ISER[0] |= (1 << EXTI9_5_IRQn); //turn on bitmask region relating to pins PA6 & PA8
+  
+  rps_calc(state); //calculated the rps and loop in here
+
+  updateDirection(state);
+
 }
 
 

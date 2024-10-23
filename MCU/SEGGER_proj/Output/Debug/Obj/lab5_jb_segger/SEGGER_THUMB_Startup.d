@@ -1,2 +1,2 @@
 Output/Debug/Obj/lab5_jb_segger/SEGGER_THUMB_Startup.o: \
- C:\Users\jbowman\Desktop\microP-lab5\MCU\SEGGER_proj\SEGGER_THUMB_Startup.s
+ /Users/jasonbowman/Desktop/Micro-Ps/microP-lab5/MCU/SEGGER_proj/SEGGER_THUMB_Startup.s
