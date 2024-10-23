@@ -15,6 +15,4 @@ Output/Debug/Obj/lab5_jb_segger/main.o: \
  C:/Users/jbowman/Desktop/microP-lab5/MCU/SEGGER_proj/CMSIS_5/CMSIS/Core/Include/mpu_armv7.h \
  C:/Users/jbowman/Desktop/microP-lab5/MCU/SEGGER_proj/STM32L4xx/Device/Include/system_stm32l4xx.h \
  lib/STM32L432KC_RCC.h lib/STM32L432KC_TIM.h lib/STM32L432KC_GPIO.h \
- lib/STM32L432KC_FLASH.h \
- C:/Program\ Files/SEGGER/SEGGER\ Embedded\ Studio\ 8.16/include/math.h \
- C:/Program\ Files/SEGGER/SEGGER\ Embedded\ Studio\ 8.16/include/__SEGGER_RTL_FP.h
+ lib/STM32L432KC_FLASH.h

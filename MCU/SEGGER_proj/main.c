@@ -11,7 +11,7 @@
 #include "STM32L432KC_TIM.h"
 #include "STM32L432KC_FLASH.h"
 #include "STM32L432KC_TIM.h"
-#include <math.h>
+//#include <math.h>
 
 
 // Necessary includes for printf to work
@@ -36,10 +36,10 @@ int _write(int file, char *ptr, int len) {
 #define COUNT_TIM TIM2     //make TIM2 to be the counter timer
 #define DELAY_TIM TIM6     //make TIM6 to be the delay timer
 int direction;             //1 = clockwise and 0 = counter clockwise
-int delta;                 //the number of 
-int rpm = 0;               //number of S it took for 1 revolution
-int PPR = 100;             //NOTE: need to find it in the data sheet
-int still = 1;
+int delta = 0;                 //the number of 
+int rpm = 0;                   //number of S it took for 1 revolution
+//int PPR = 100;             //NOTE: need to find it in the data sheet
+int still = 1;                 //1=not moving motor, 0=moving motor
 
 //********************************
 void GPIOinit() {                   //GPIO PA8 & PA6 enable
@@ -74,16 +74,17 @@ void delay(int ms) {                //Function to create a delay using TIM6
     }
 }
 
-void rpm_calc (delta) {         //calculate the RPS and Direction of the motor
-  int ms_per_rev = fabs(delta) * PPR;   //time per revolution in ms
-  int min_per_rev = ms_per_rev / 60000; //min per revolution
-  rpm = 1 / min_per_rev;                //calculate rpm
-}
+//void rpm_calc (delta) {         //calculate the RPS and Direction of the motor
+//  int ms_per_rev = fabs(delta) * PPR;   //time per revolution in ms
+//  int min_per_rev = ms_per_rev / 60000; //min per revolution
+//  rpm = 1 / min_per_rev;                //calculate rpm
+//}
 //********************************
 
 int main(void) {
+  __enable_irq(); // enable global interupts
+ 
   configureFlash(); //configure flash memory
-  configurePLL();   //PLL out = 8MHz
   configureClock(); //configure clock to be SYSCLK
   GPIOinit();       //initialize GPIOs
 
@@ -91,34 +92,59 @@ int main(void) {
   initTIM(DELAY_TIM);                   //initialize delay timer TIM6
   initTIM(COUNT_TIM);                   //initialize counter timer TIM2
 
-  __enable_irq(); // enable global interupts
+   //__enable_irq(); // enable global interupts
+  SYSCFG->EXTICR[2] |= SYSCFG_EXTICR3_EXTI8_PA; // Select PA8
+  SYSCFG->EXTICR[1] |= SYSCFG_EXTICR2_EXTI6_PA; // Select PA6
+
   
   EXTIcfgr(); //configure external interrupts specific for this project
 
   NVIC->ISER[0] |= (1 << EXTI9_5_IRQn); //turn on bitmask region relating to pins PA6 & PA8
   
-  rpm_calc(delta); //calculated the rps and loop in here
-
-  if (still) {
-    delay(400);
-    printf("Direction: N/A\n");
-    printf("rps: %d\n", rpm);
-  }
-
-  if((!still) && (delta > 0)) {
-    delay(400);
-    printf("Direction: Clockwise\n");
-    printf("rps: %d\n", rpm);
-  }
-
-  if((!still) && (delta < 0)) {
-    delay(400);
-    printf("Direction: Counter Clockwise\n");
-    printf("rps: %d\n", rpm);
-  }
+  //rpm_calc(delta); //calculated the rps and loop in here
 
 
+
+
+    double rpm1 = 0;
+    double rpm2 = 0;
+    double rpm3 = 0;
+    double rpm4 = 0;
+    double rpm = 0;
+    while(1){  
+  
+        delay_millis(DELAY_TIM, 250);
+
+        // if clock is not reset for a long time, then the motor is not turning, toggle off
+        if(COUNT_TIM->CNT > 45000){
+          still = 1;
+        }
+        
+        // if off is 1, then motor is not turning and rpm is 0
+        if(still){
+          rpm = 0;
+        
+        // else calculations for motor speed
+        }else {
+          if(rpm == 0){
+            rpm1 = 1/(double)(120*delta*4/1000000.0);
+            rpm2 = rpm1;
+            rpm3 = rpm1;
+            rpm4 = rpm1;
+          } else {
+            rpm1 = rpm2;
+            rpm2 = rpm3;
+            rpm3 = rpm4;
+            rpm4 = 1/(double)(120*delta*4/1000000.0);
+          }
+          rpm = (rpm1+rpm2+rpm3+rpm4)/4;
+        }
+        
+        printf("Revolutions per Second: %f\n", rpm);
+        printf("Delta: %d\n", delta);
+    }
 }
+
 
 
 void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 interupts
@@ -131,7 +157,7 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
     COUNT_TIM->CNT = 0;    //set the counter to be 0
     still = 0;             //the motor is not still
 
-    if((Ainterupt==1) && (Binterupt==1)){ //if a pulse occurs
+    if((Binterupt==1) && (Ainterupt==1)){ //if a pulse occurs
       delta = COUNT_TIM->CNT; //clock cycles going CW
     }
     COUNT_TIM->CNT = 0; //reset counter
@@ -140,12 +166,13 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
   //if B interupt happens
   if (EXTI->PR1 & (1 << 6)){
     EXTI->PR1 |= (1 << 6); //clear the interupt flag
-    COUNT_TIM->CNT = 0;    //set the counter to be 0
+    //COUNT_TIM->CNT = 0;    //set the counter to be 0
     still = 0;             //the motor is not still
 
-    if((Ainterupt==1) && (Binterupt==1)){ //if a pulse occurs
+   if((Binterupt==1) && (Ainterupt==1)){ //if a pulse occurs
       delta = -COUNT_TIM->CNT; //clock cycles going CCW
     }
     COUNT_TIM->CNT = 0; //reset counter
   }
 }
+
