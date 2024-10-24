@@ -13,8 +13,7 @@
 #include "STM32L432KC_TIM.h"
 #include <math.h>
 
-
-// Necessary includes for printf to work
+// Necessary includes for printf to work///////////////////
 #include "stm32l432xx.h"
 
 // Function used by printf to send characters to the laptop
@@ -25,39 +24,35 @@ int _write(int file, char *ptr, int len) {
   }
   return len;
 }
-/////
+////////////////////////////////////////////////////////////
 
 // define pins
 #define A_IN_PIN PA8 //"FT_a" 5V capatible
 #define B_IN_PIN PA6 //"FT_a" 5V capatible
 
 //Global variables
-#define interupt_flag      //the internal software flag that says there was an interupt that happened
-#define COUNT_TIM TIM6     //make TIM2 to be the counter timer
-#define DELAY_TIM TIM2    //make TIM6 to be the delay timer
-int direction;             //1 = clockwise and 0 = counter clockwise
-signed int delta;                 //the number of 
-int rpm = 0;                   //number of S it took for 1 revolution
-int PPR = 120;             //NOTE: need to find it in the data sheet
-int still = 1;                 //1=not moving motor, 0=moving motor
-int A;
-int B;
-
+#define interupt_flag   //the internal software flag that says there was an interupt that happened
+#define COUNT_TIM TIM6  //make TIM2 to be the counter timer
+#define DELAY_TIM TIM2  //make TIM6 to be the delay timer
+signed int delta;       //the number of clock cycles per revolution
+int rps = 0;            //number of ms it took for 1 revolution
+int PPR = 120;          //based on the data sheet
+int still = 1;          //1=not moving motor, 0=moving motor
 
 //********************************
-void GPIOinit() {                   //GPIO PA8 & PA6 enable
+void GPIOinit() { //GPIO PA8 & PA6 enable
   gpioEnable(GPIO_PORT_A); //enable GPIOA
 
   // GPIO PA8 (A interupt)
-  pinMode(A_IN_PIN, GPIO_INPUT); //set PA8 input mode as 
+  pinMode(A_IN_PIN, GPIO_INPUT);                    //set PA8 input mode as 
   GPIOA->PUPDR |= _VAL2FLD(GPIO_PUPDR_PUPD8, 0b01); //set PA8 as pull up input
   
   // GPIO PA6 (B interupt)
-  pinMode(B_IN_PIN, GPIO_INPUT); //set PA6 as input
+  pinMode(B_IN_PIN, GPIO_INPUT);                    //set PA6 as input
   GPIOA->PUPDR |= _VAL2FLD(GPIO_PUPDR_PUPD6, 0b01); //set PA6 as pull up input
 }
 
-void EXTIcfgr() {                   //configure external interrupts specific for this project
+void EXTIcfgr() { //configure external interrupts specific for this project
     EXTI->IMR1 |= _VAL2FLD(EXTI_IMR1_IM6, 1); //enable externam interrupt mask for pin A6
     EXTI->IMR1 |= _VAL2FLD(EXTI_IMR1_IM8, 1); //enable externam interrupt mask for pin A8
     
@@ -69,7 +64,6 @@ void EXTIcfgr() {                   //configure external interrupts specific for
     EXTI->FTSR1 |= _VAL2FLD(EXTI_FTSR1_FT6, 1); 
     EXTI->FTSR1 |= _VAL2FLD(EXTI_FTSR1_FT8, 1); 
 }
-
 
 int main(void) {
   __enable_irq(); // enable global interupts
@@ -91,19 +85,15 @@ int main(void) {
 
   NVIC->ISER[0] |= (1 << EXTI9_5_IRQn); //turn on bitmask region relating to pins PA6 & PA8
   
-  //rpm_calc(delta); //calculated the rps and loop in here
-
-
-
-
-    double rpm1 = 0;
-    double rpm2 = 0;
-    double rpm3 = 0;
-    double rpm4 = 0;
-    double rpm = 0;
-    while(1){  
+    //initialize RPSs
+    double rps1 = 0;
+    double rps2 = 0;
+    double rps3 = 0;
+    double rps4 = 0;
+    double rps = 0;
+    while(1){ //calculate the RPS and Direction then print
   
-        delay_millis(DELAY_TIM, 250);
+        delay_millis(DELAY_TIM, 250); //time between prints
 
         // if clock is not reset for a long time, then the motor is not turning, toggle off
         if(COUNT_TIM->CNT > 50){
@@ -112,37 +102,32 @@ int main(void) {
         
         // if off is 1, then motor is not turning and rpm is 0
         if(still){
-          rpm = 0;
+          rps = 0;
         
         // else calculations for motor speed
         }else {
-          if(rpm == 0){
-            rpm1 = 1/(double)(PPR*abs(delta)*4/1000.0);
-            rpm2 = rpm1;
-            rpm3 = rpm1;
-            rpm4 = rpm1;
+          if(rps == 0){
+            rps1 = 1/(double)(PPR*abs(delta)*4/1000.0); //calculate the new RPS
+            rps2 = rps1;
+            rps3 = rps1;
+            rps4 = rps1;
           } else {
-            rpm1 = rpm2;
-            rpm2 = rpm3;
-            rpm3 = rpm4;
-            rpm4 = 1/(double)(PPR*abs(delta)*4/1000.0);
+            rps1 = rps2;
+            rps2 = rps3;
+            rps3 = rps4;
+            rps4 = 1/(double)(PPR*abs(delta)*4/1000.0); //calculate the new RPS
           }
-          rpm = (rpm1+rpm2+rpm3+rpm4)/4;
+          rps = (rps1+rps2+rps3+rps4)/4;
         }
         
-        
-
-        //printf("Revolutions per Second: %f\n", rpm);
-
-        //printf("Delta: %d\n", delta);
-        
-if (delta > 0) {
-    printf("Direction: Counter Clockwise, RPM: %f\n", rpm);
-} else if (delta < 0) {
-    printf("Direction: Clockwise, RPM: %f\n", rpm);
-} else {
-    printf("Delta is zero, no rotation. RPM: %f\n", rpm);
-}
+        //Printing values
+        if (delta > 0) {
+    printf("Direction: Counter Clockwise, RPS: %f\n", rps);
+        } else if (delta < 0) {
+    printf("Direction: Clockwise, RPS: %f\n", rps);
+        } else {
+    printf("Delta is zero, no rotation. RPS: %f\n", rps);
+        }
 
     }
 }
@@ -152,17 +137,10 @@ if (delta > 0) {
 void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 interupts
   int Ainterupt = digitalRead(A_IN_PIN); //reading the value of PA8 through the on board 5V ADC
   int Binterupt = digitalRead(B_IN_PIN); //reading the value of PA6 through the on board 5V ADC
-  //unsigned int initial_tim = COUNT_TIM->CNT;
-  //A = Ainterupt;
-  //B = COUNT_TIM->CNT;
 
   //if A interupt happens
   if (EXTI->PR1 & (1 << 8)){
-    //EXTI->PR1 |= (1 << 8); //clear the interupt flag
-    still = 0;             //the motor is not still
-    //printf("Delta1: %d\n", A);
-    //printf("Delta1: %d\n", B);
-
+    still = 0; //the motor is not still
     if((Binterupt==1) && (Ainterupt==1)){ //if a pulse occurs
       delta = COUNT_TIM->CNT; //clock cycles going CW
        //printf("Delta1: %d\n", delta);
@@ -173,14 +151,11 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
 
   //if B interupt happens
   if (EXTI->PR1 & (1 << 6)){
-    //EXTI->PR1 |= (1 << 6); //clear the interupt flag
-    still = 0;             //the motor is not still
-
+    still = 0; //the motor is not still
    if((Binterupt==1) && (Ainterupt==1)){ //if a pulse occurs
       delta = -COUNT_TIM->CNT; //clock cycles going CCW
-      //printf("Delta2: %d\n", delta);
     }
     EXTI->PR1 |= (1 << 6); //clear the interupt flag
-    COUNT_TIM->CNT = 0; //reset counter
+    COUNT_TIM->CNT = 0;    //reset counter
   }
 }
