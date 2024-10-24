@@ -1,6 +1,7 @@
 // Jason Bowman
 // jbowman@hmc.edu
 // 10-13-24
+// This code uses quadrature encoding on a DC motor along with interrutps in order to print our the speed and direction of the DC motor.
 
 // include global headers
 #include "stdio.h"
@@ -38,6 +39,7 @@ signed int delta;       //the number of clock cycles per revolution
 int rps = 0;            //number of ms it took for 1 revolution
 int PPR = 120;          //based on the data sheet
 int still = 1;          //1=not moving motor, 0=moving motor
+double C = 2*3.141592*(0.000157/2); //circumference of the motor shaft
 
 //********************************
 void GPIOinit() { //GPIO PA8 & PA6 enable
@@ -119,14 +121,19 @@ int main(void) {
           }
           rps = (rps1+rps2+rps3+rps4)/4;
         }
-        
+
+    //int rps_ms_calc = rps;  //intermediary to calculate the m/s val using rps
+    double speed_linear = rps*C; //calculate the m/s speed of the motor from rps
+
         //Printing values
         if (delta > 0) {
-    printf("Direction: Counter Clockwise, RPS: %f\n", rps);
+    //printf("Direction: Counter Clockwise, Speed: %f m/s\n", speed_linear); //CCW m/s
+    printf("Direction: Counter Clockwise, RPS: %.3f\n", rps);            //CCW RPS
         } else if (delta < 0) {
-    printf("Direction: Clockwise, RPS: %f\n", rps);
+    //printf("Direction: Clockwise, Speed: %f m/s\n", speed_linear);         //CW m/s
+    printf("Direction: Clockwise, RPS: %.3f\n", rps);                    //CW RPS
         } else {
-    printf("Delta is zero, no rotation. RPS: %f\n", rps);
+    printf("Delta is zero, no rotation. m/s: %f\n", rps);
         }
 
     }
