@@ -36,7 +36,7 @@ int _write(int file, char *ptr, int len) {
 #define COUNT_TIM TIM6     //make TIM2 to be the counter timer
 #define DELAY_TIM TIM2    //make TIM6 to be the delay timer
 int direction;             //1 = clockwise and 0 = counter clockwise
-unsigned int delta;                 //the number of 
+signed int delta;                 //the number of 
 int rpm = 0;                   //number of S it took for 1 revolution
 int PPR = 120;             //NOTE: need to find it in the data sheet
 int still = 1;                 //1=not moving motor, 0=moving motor
@@ -106,7 +106,7 @@ int main(void) {
         delay_millis(DELAY_TIM, 250);
 
         // if clock is not reset for a long time, then the motor is not turning, toggle off
-        if(COUNT_TIM->CNT > 45000){
+        if(COUNT_TIM->CNT > 50){
           still = 1;
         }
         
@@ -132,15 +132,18 @@ int main(void) {
         
         
 
-        printf("Revolutions per Second: %f\n", rpm);
+        //printf("Revolutions per Second: %f\n", rpm);
 
-        printf("Delta: %d\n", delta);
+        //printf("Delta: %d\n", delta);
         
-        if (delta > 0) {
-          printf("Direction: Counter Clockwise\n");
-        } else {
-          printf("Direction: Clockwise\n");
-        }
+if (delta > 0) {
+    printf("Direction: Counter Clockwise, RPM: %f\n", rpm);
+} else if (delta < 0) {
+    printf("Direction: Clockwise, RPM: %f\n", rpm);
+} else {
+    printf("Delta is zero, no rotation. RPM: %f\n", rpm);
+}
+
     }
 }
 
@@ -181,4 +184,3 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
     COUNT_TIM->CNT = 0; //reset counter
   }
 }
-
