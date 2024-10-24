@@ -109,7 +109,7 @@ int main(void) {
         // else calculations for motor speed
         }else {
           if(rps == 0){
-            rps1 = 1/(double)(PPR*abs(delta)*4/1000.0); //calculate the new RPS
+            rps1 = 1/(double)(PPR*abs(delta)/1000.0); //calculate the new RPS
             rps2 = rps1;
             rps3 = rps1;
             rps4 = rps1;
@@ -117,7 +117,7 @@ int main(void) {
             rps1 = rps2;
             rps2 = rps3;
             rps3 = rps4;
-            rps4 = 1/(double)(PPR*abs(delta)*4/1000.0); //calculate the new RPS
+            rps4 = 1/(double)(PPR*abs(delta)/1000.0); //calculate the new RPS
           }
           rps = (rps1+rps2+rps3+rps4)/4;
         }
@@ -127,13 +127,12 @@ int main(void) {
 
         //Printing values
         if (delta > 0) {
-    //printf("Direction: Counter Clockwise, Speed: %f m/s\n", speed_linear); //CCW m/s
-    printf("Direction: Counter Clockwise, RPS: %.3f\n", rps);            //CCW RPS
+          printf("Direction: Counter Clockwise, RPS: %.3f, Speed: %f m/s\n", rps, speed_linear); //CCW
+            //CCW RPS
         } else if (delta < 0) {
-    //printf("Direction: Clockwise, Speed: %f m/s\n", speed_linear);         //CW m/s
-    printf("Direction: Clockwise, RPS: %.3f\n", rps);                    //CW RPS
+          printf("Direction: Clockwise, RPS: %.3f, Speed: %f m/s\n", rps, speed_linear); //CW
         } else {
-    printf("Delta is zero, no rotation. m/s: %f\n", rps);
+          printf("Delta is zero, no rotation. m/s: %f\n", rps);
         }
 
     }
@@ -158,7 +157,7 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
 
   //if B interupt happens
   if (EXTI->PR1 & (1 << 6)){
-    still = 0; //the motor is not still
+   still = 0; //the motor is not still
    if((Binterupt==1) && (Ainterupt==1)){ //if a pulse occurs
       delta = -COUNT_TIM->CNT; //clock cycles going CCW
     }
