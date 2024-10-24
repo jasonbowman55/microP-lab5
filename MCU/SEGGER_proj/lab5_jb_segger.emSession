@@ -59,7 +59,7 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="69" useTextEdit="1" folds0="44" path="main.c" left="0" selected="1" top="98" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="69" useTextEdit="1" folds0="44" path="main.c" left="0" selected="1" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="3" y="37" useTextEdit="1" path="lib/STM32L432KC_TIM.c" left="0" top="3" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="6" y="16" useTextEdit="1" path="lib/STM32L432KC_TIM.h" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="9" useTextEdit="1" path="lib/STM32L432KC_FLASH.c" left="0" top="0" codecName="Default"/>
