@@ -33,13 +33,14 @@ int _write(int file, char *ptr, int len) {
 
 //Global variables
 #define interupt_flag   //the internal software flag that says there was an interupt that happened
-#define COUNT_TIM TIM6  //make TIM2 to be the counter timer
-#define DELAY_TIM TIM2  //make TIM6 to be the delay timer
-signed int delta;       //the number of clock cycles per revolution
+#define COUNT_TIM TIM2  //make TIM2 to be the counter timer
+#define DELAY_TIM TIM6  //make TIM6 to be the delay timer
+int delta = 0;       //the number of clock cycles per revolution
 int rps = 0;            //number of ms it took for 1 revolution
 int PPR = 120;          //based on the data sheet
 int still = 1;          //1=not moving motor, 0=moving motor
 double C = 2*3.141592*(0.000157/2); //circumference of the motor shaft
+volatile int count;
 
 //********************************
 void GPIOinit() { //GPIO PA8 & PA6 enable
@@ -75,8 +76,9 @@ int main(void) {
   GPIOinit();       //initialize GPIOs
 
   RCC->APB1ENR1 |= RCC_APB1ENR1_TIM6EN; //configure TIM6 and TIM2 to be on and connected to the SYSCLK
+  RCC->APB1ENR1 |= RCC_APB1ENR1_TIM2EN; //configure TIM6 and TIM2 to be on and connected to the SYSCLK
   initTIM(DELAY_TIM);                   //initialize delay timer TIM6
-  initTIM(COUNT_TIM);                   //initialize counter timer TIM2
+  initTIMfast(COUNT_TIM);                   //initialize counter timer TIM2
 
    //__enable_irq(); // enable global interupts
   SYSCFG->EXTICR[2] |= SYSCFG_EXTICR3_EXTI8_PA; // Select PA8
@@ -95,7 +97,7 @@ int main(void) {
     double rps = 0;
     while(1){ //calculate the RPS and Direction then print
   
-        delay_millis(DELAY_TIM, 250); //time between prints
+        delay_millis(DELAY_TIM, 10); //time between prints
 
         // if clock is not reset for a long time, then the motor is not turning, toggle off
         if(COUNT_TIM->CNT > 50){
@@ -109,7 +111,7 @@ int main(void) {
         // else calculations for motor speed
         }else {
           if(rps == 0){
-            rps1 = 1/(double)(PPR*abs(delta)/1000.0); //calculate the new RPS
+            rps1 = 1/(double)(PPR*abs(delta)*4/1000.0); //calculate the new RPS
             rps2 = rps1;
             rps3 = rps1;
             rps4 = rps1;
@@ -117,7 +119,7 @@ int main(void) {
             rps1 = rps2;
             rps2 = rps3;
             rps3 = rps4;
-            rps4 = 1/(double)(PPR*abs(delta)/1000.0); //calculate the new RPS
+            rps4 = 1/(double)(PPR*abs(delta)*4/1000.0); //calculate the new RPS
           }
           rps = (rps1+rps2+rps3+rps4)/4;
         }
@@ -154,6 +156,9 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
     EXTI->PR1 |= (1 << 8); //clear the interupt flag
     COUNT_TIM->CNT = 0; //reset counter
   }
+  return;
+
+
 
   //if B interupt happens
   if (EXTI->PR1 & (1 << 6)){
@@ -164,4 +169,5 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
     EXTI->PR1 |= (1 << 6); //clear the interupt flag
     COUNT_TIM->CNT = 0;    //reset counter
   }
+  return;
 }
