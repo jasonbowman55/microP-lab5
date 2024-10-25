@@ -1,6 +1,7 @@
 // Jason Bowman
 // jbowman@hmc.edu
 // 10-13-24
+// This code uses quadrature encoding on a DC motor along with interrutps in order to print our the speed and direction of the DC motor.
 
 // include global headers
 #include "stdio.h"
@@ -10,52 +11,49 @@
 #include "STM32L432KC_RCC.h"
 #include "STM32L432KC_TIM.h"
 #include "STM32L432KC_FLASH.h"
-#include "STM32L432KC_USART.h"
-#include "STM32L432KC_SPI.h"
 #include "STM32L432KC_TIM.h"
+#include <math.h>
+
+// Necessary includes for printf to work///////////////////
+#include "stm32l432xx.h"
+
+// Function used by printf to send characters to the laptop
+int _write(int file, char *ptr, int len) {
+  int i = 0;
+  for (i = 0; i < len; i++) {
+    ITM_SendChar((*ptr++));
+  }
+  return len;
+}
+////////////////////////////////////////////////////////////
 
 // define pins
 #define A_IN_PIN PA8 //"FT_a" 5V capatible
 #define B_IN_PIN PA6 //"FT_a" 5V capatible
 
 //Global variables
-#define interupt_flag     //the internal software flag that says there was an interupt that happened
-unsigned char direction   //1 = clockwise and 0 = counter clockwise
-int state                 //this tells you the state which the interupts are at (if Ainterupt and Binterupt are on or off) [0,1,2,3] encoding
-int PulseCount            //pulses per revolution (1 pulse is when A and B interupts both equal 1
-int rps                   //number of S it took for 1 revolution
-int msPR                  //number of ms it took for 1 revolution
-int PPR = 360;            //NOTE: need to change likely through experimentation
-int A_on                  //internal flag saying that interupt A is triggered
-int B_on                  //internal flag saying that interupt B is triggered
+#define interupt_flag   //the internal software flag that says there was an interupt that happened
+#define COUNT_TIM TIM2  //make TIM2 to be the counter timer
+#define DELAY_TIM TIM6  //make TIM6 to be the delay timer
+uint32_t delta;       //the number of clock cycles per revolution
+double rps;            //number of ms it took for 1 revolution
+int PPR = 120;          //based on the data sheet
+int still = 1;          //1=not moving motor, 0=moving motor
+double C = 2*3.141592*(0.000157/2); //circumference of the motor shaft
+volatile int count;
+int direction;
 
 //********************************
 void GPIOinit() { //GPIO PA8 & PA6 enable
   gpioEnable(GPIO_PORT_A); //enable GPIOA
 
   // GPIO PA8 (A interupt)
-  pinMode(A_IN_PIN, GPIO_INPUT); //set PA8 input mode as 
-  GPIOA->PUPDR |= _VAL2FLD(GPIO_PUPDR_PUPD8, 0b01) //set PA8 as pull up input
+  pinMode(A_IN_PIN, GPIO_INPUT);                    //set PA8 input mode as 
+  GPIOA->PUPDR |= _VAL2FLD(GPIO_PUPDR_PUPD8, 0b01); //set PA8 as pull up input
   
   // GPIO PA6 (B interupt)
-  pinMode(B_IN_PIN, GPIO_INPUT); //set PA6 as input
-  GPIOA->PUPDR |= _VAL2FLD(GPIO_PUPDR_PUPD6, 0b01) //set PA6 as pull up input
-}
-
-void SYSCLKinit() { //SYSCLK = MSI (4MHz)
-  RCC->CR |= (RCC_CR_MSION); //make MSI the SYSCLK
-  RCC->CR &= ~(RCC_CR_MSIRANGE); //clear MSI range
-  RCC->CR |= _FLD2VAL(RCC_CR_MSIRANGE, 0b0110); //set MSI as defalut 4MHz
-}
-
-void countTIMinit() { //TIM6
-  RCC->APB1ENR1 |= RCC_APB1ENR1_TIM6EN;
-  TIM6->PSC &= ~(65535); //clear TIM6_PSC
-  uint32_t PSCval = uint32_t (SystemCoreClock/1000); //make counter 1ms
-  TIM6->PSC |= (PSCval); //effectively do not use PSC
-
-  TIM6->EGR |= (TIM_EGR_UG); //generate update event to update PSC
-  TIM6->CR1 |= (TIM_CR1_CEN); //enable TIM6 counter
+  pinMode(B_IN_PIN, GPIO_INPUT);                    //set PA6 as input
+  GPIOA->PUPDR |= _VAL2FLD(GPIO_PUPDR_PUPD6, 0b01); //set PA6 as pull up input
 }
 
 void EXTIcfgr() { //configure external interrupts specific for this project
@@ -71,145 +69,107 @@ void EXTIcfgr() { //configure external interrupts specific for this project
     EXTI->FTSR1 |= _VAL2FLD(EXTI_FTSR1_FT8, 1); 
 }
 
-void delay(int ms) { // Function to create a delay using TIM6
-    for (int i = 0; i < ms; i++) {
-        TIM6->CNT = 0; // Reset the timer count
-        while (TIM6->CNT < 1); // Wait until the count reaches 1 (1 ms)
-    }
-}
-
-void rps_calc(int state) { //calculates rps based on the state
-    
-  //+1 to PulseCount every time A and B interupts are hi
-  if (state == 3) {
-    PulseCount = PulseCount + 1;
-  }
-  /////
-
-  //outputs how many seconds it took for one revolution
-  while (PulseCount < PPR) {
-    delay(1); //delay 1ms
-    msPR = msPR + 1;
-    rps = msPR / 1000;
-  }
-  /////
-}
-//********************************
-
 int main(void) {
-  GPIOinit(); //initialize GPIOs
-  SYSCLKinit(); //initialize 4MHz MSI SYSCLK
-  countTIMinit(); //TIM6 init
-
   __enable_irq(); // enable global interupts
+ 
+  configureFlash(); //configure flash memory
+  configureClock(); //configure clock to be SYSCLK
+  GPIOinit();       //initialize GPIOs
+
+  RCC->APB1ENR1 |= RCC_APB1ENR1_TIM6EN; //configure TIM6 and TIM2 to be on and connected to the SYSCLK
+  RCC->APB1ENR1 |= RCC_APB1ENR1_TIM2EN; //configure TIM6 and TIM2 to be on and connected to the SYSCLK
+  initTIM(DELAY_TIM);                   //initialize delay timer TIM6
+  initTIM(COUNT_TIM);                   //initialize counter timer TIM2
+
+   //__enable_irq(); // enable global interupts
+  SYSCFG->EXTICR[2] |= SYSCFG_EXTICR3_EXTI8_PA; // Select PA8
+  SYSCFG->EXTICR[1] |= SYSCFG_EXTICR2_EXTI6_PA; // Select PA6
+
   
   EXTIcfgr(); //configure external interrupts specific for this project
 
   NVIC->ISER[0] |= (1 << EXTI9_5_IRQn); //turn on bitmask region relating to pins PA6 & PA8
   
-  rps_calc(int state); //calculated the rps and loop in here
+    //initialize RPSs
+    double rps1 = 0;
+    double rps2 = 0;
+    double rps3 = 0;
+    double rps4 = 0;
+    double rps = 0;
+    while(1){ //calculate the RPS and Direction then print
+  
+        delay_millis(DELAY_TIM, 1); //time between prints
 
-  void updateDirection(int state) {
-    if (A_on) {
-      switch(state) {
-          case 0:
-              delay(700);
-              printf("Direction: Clockwise\n");         // CW
-              printf("rps: %d\n", rps);
-              break;
-          case 1:
-              delay(700);
-              printf("Direction: Counter-Clockwise\n"); // CC
-              printf("rps: %d\n", rps);
-              break;
-          case 2:
-              delay(700);
-              printf("Direction: Counter-Clockwise\n"); // CC
-              printf("rps: %d\n", rps);
-              break;
-          case 3:
-              delay(700);
-              printf("Direction: Clockwise\n");         // CW
-              printf("rps: %d\n", rps);
-              break;
-          default:
-              delay(700);
-              printf("Unknown state\n");
-              break;
-      }
-      A_on = 0;
-    }
+        // if clock is not reset for a long time, then the motor is not turning, toggle off
+        if(COUNT_TIM->CNT > 100){
+          still = 1;
+        }
+        
+        // if off is 1, then motor is not turning and rpm is 0
+        if(still){
+          rps = 0;
+        
+        // else calculations for motor speed
+        }else {
+          if(rps == 0){
+            rps1 = 4/((double)((PPR*delta)/1000.0)); //calculate the new RPS
+            rps2 = rps1;
+            rps3 = rps1;
+            rps4 = rps1;
+          } else {
+            rps1 = rps2;
+            rps2 = rps3;
+            rps3 = rps4;
+            rps4 = 4/((double)((PPR*delta)/1000.0)); //calculate the new RPS
+          }
+          rps = (rps1+rps2+rps3+rps4)/4;
+        }
 
-    if (B_on) {
-      switch(state) {
-          case 0:
-              delay(700);
-              printf("Direction: Counter-Clockwise\n"); // CC
-              printf("rps: %d\n", rps);
-              break;
-          case 1:
-              delay(700);
-              printf("Direction: Clockwise\n");         // CW
-              printf("rps: %d\n", rps);
-              break;
-          case 2:
-              delay(700);
-              printf("Direction: Counter-Clockwise\n"); // CC
-              printf("rps: %d\n", rps);
-              break;
-          case 3:
-              delay(700);
-              printf("Direction: Clockwise\n");         // CW
-              printf("rps: %d\n", rps);
-              break;
-          default:
-              delay(700);
-              printf("Unknown state\n");
-              break;
-      }
-      B_on = 0;
+    //int rps_ms_calc = rps;  //intermediary to calculate the m/s val using rps
+    double speed_linear = rps*C; //calculate the m/s speed of the motor from rps
+
+        //Printing values
+        if (direction == 1) {
+          printf("Direction: Counter Clockwise, RPS: %.3f, Speed: %f m/s\n", rps, speed_linear); //CCW
+            //CCW RPS
+        } else if (direction == 0) {
+          printf("Direction: Clockwise, RPS: %.3f, Speed: %f m/s\n", rps, speed_linear); //CW
+        } else {
+          printf("Delta is zero, no rotation. m/s: %f\n", rps);
+        }
+
     }
-  }
 }
 
 
-void EXTI9_5_IRQHandler(void) {
-  int Ainterupt = digitalRead(A_IN_PIN); //reading the value of PA8 through the on board 5V ADC
-  int Binterupt = digitalRead(B_IN_PIN); //reading the value of PA6 through the on board 5V ADC
-  state = Ainterupt + (2 * Binterupt);   //creates a 0,1,2,3 encoding for the state of the interupts
-  //NOTE: 0=A_low B_low / 1=A_hi B_low / 2=A_low B_hi / 3=A_hi B_hi
-    
-  //NOTE: is the indedxing correct below? I remember someone saying that this part was strange
 
-    //interupt A (PA8) triggered the interupt
-    if (EXTI->PR1 & (1 << 8)){
-      A_on = 1; //internal flag signaling A interupt is triggered
-       switch(state){
-          case 0:             //0=A_low B_low
-            direction = 1;    //CW
-          case 1:             //1=A_hi B_low
-            direction = 0;    //CC
-          case 2:             //2=A_low B_hi
-            direction = 0;    //CC
-          case 3:             //3=A_hi B_hi
-            direction = 1;    //CW
-       }
-      EXTI->PR1 |= (1 << 8); //clear the interupt flag
-    }
+void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 interupts
+  int Binterupt = (GPIOA->IDR >> 6) & 0x1;  // Extract bit 6 (PA6)
+  int Ainterupt = (GPIOA->IDR >> 8) & 0x1;  // Extract bit 8 (PA8)
 
-    //interupt B (PA6) triggered the interupt
-    if (EXTI->PR1 & (1 << 6)){ //if interupt A (PA8) triggered the interupt
-      B_on = 1; //internal flag signaling B interupt is triggered
-       switch(state){
-          case 0:             //0=A_low B_low
-            direction = 0;    //CC
-          case 1:             //1=A_hi B_low
-            direction = 1;    //CW
-          case 2:             //2=A_low B_hi
-            direction = 1;    //CC
-          case 3:             //3=A_hi B_hi
-            direction = 0;    //CW
-       }
-      EXTI->PR1 |= (1 << 6); //clear the interupt flag
+  count++;
+
+  //if A interupt happens
+  if (EXTI->PR1 & (1 << 8)){
+    still = 0; //the motor is not still
+    if((Binterupt==1) && (Ainterupt==1) && (count >= 4)){ //if a pulse occurs
+       delta = COUNT_TIM->CNT; //clock cycles going CW
+       count = 0;
+       COUNT_TIM->CNT = 0; //reset counter
+       direction = 1;
     }
+    EXTI->PR1 |= (1 << 8); //clear the interupt flag
+  }
+
+  //if B interupt happens
+  if (EXTI->PR1 & (1 << 6)){
+   still = 0; //the motor is not still
+   if((Binterupt==1) && (Ainterupt==1) && (count >= 4)){ //if a pulse occurs
+      delta = COUNT_TIM->CNT; //clock cycles going CCW
+      count = 0;
+      COUNT_TIM->CNT = 0;    //reset counter
+      direction = 0;
+    }
+    EXTI->PR1 |= (1 << 6); //clear the interupt flag
+  }
 }

@@ -10,37 +10,40 @@ void configurePLL() {
     // M: XX, N: XX, R: XX
     // Use MSI as PLLSRC
 
+    //RCC->CR &= ~(0b1111 << 4);
+    //RCC->CR |= (0b0111 << 4);
+
     // TODO: Turn off PLL
         RCC->CR &= ~(1 << 24);
     // TODO: Wait till PLL is unlocked (e.g., off)
         //uint32_t bit_filter = (1 << 25); //Jason way
 
-        while((RCC->CR >> 25 & 1) == 0); //Brake way
+        while((RCC->CR >> 25 & 1) != 0); //Brake way
 
     // Load configuration
     // TODO: Set PLL SRC to MSI
-        RCC->CFGR |= (1 << 0);
-        RCC->CFGR &= ~(1 << 1);
+    //    RCC->PLLCFGR &= (1 << 0); //ORIGINAL
+        RCC->PLLCFGR |= (0b01 << 0); //CHANGED
     // TODO: Set PLLN
-        //RCC->CFGR &= ~(0b11111111 << 8); //clear PLLN --- WHY IS THIS 0b?
-        RCC->CFGR |= (0b10100000 << 8); //PLLN = 80 --- PLLN IS ONLY 7 BIT?
+        RCC->PLLCFGR &= ~(0b1111111 << 8); //clear PLLN --- WHY IS THIS 0b?
+        RCC->PLLCFGR |= (0b0001000 << 8); //PLLN = 8 --- PLLN IS ONLY 7 BIT?
 
     // TODO: Set PLLM
-        //RCC->CFGR &= ~(0b111 << 4); //clear PLLM
-        RCC->CFGR |= (0b000 << 4); //PLLM = 1
+        RCC->PLLCFGR &= ~(0b111 << 4); //clear PLLM
+        RCC->PLLCFGR |= (0b000 << 4); //PLLM = 1
 
     // TODO: Set PLLR
-        //RCC->CFGR &= ~(0b11 << 25); //clear PLLR
-        RCC->CFGR |= (0b01 << 25); //PLLR = 4
+        RCC->PLLCFGR &= ~(1 << 26); //clear PLLR
+        RCC->PLLCFGR |= (1 << 25); //PLLR = 4
     
     // TODO: Enable PLLR output
-        RCC->CFGR |= (1 << 24); //connect PLLREN
+        RCC->PLLCFGR |= (1 << 24); //connect PLLREN
 
     // TODO: Enable PLL
         RCC->CR |= (1 << 24); //PLL on
     
     // TODO: Wait until PLL is locked
-        while((RCC->CR >> 25 & 1) != 0); //wait for PLL lock --- DOES THIS STOP THE PROGRAM?
+        while((RCC->CR >> 25 & 1) == 0); //wait for PLL lock --- DOES THIS STOP THE PROGRAM?
 
      // enable AHB1
      //   RCC->AHB1ENR &= ~(1 << 12);
@@ -57,4 +60,5 @@ void configureClock(){
     // Select PLL as clock source
     RCC->CFGR |= (0b11 << 0);
     while(!((RCC->CFGR >> 2) & 0b11));
+
 }

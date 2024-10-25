@@ -1,15 +1,15 @@
 // STM32F401RE_USART.h
 // Header for USART functions
 
-#ifndef STM32L4_USART_H //include guard (if not defined)
-#define STM32L4_USART_H //redefine (WHY DO WE USE THIS?)
+#ifndef STM32L4_USART_H
+#define STM32L4_USART_H
 
-#include <stdint.h> //includ standar integer types
-#include <stm32l432xx.h> //include CMSIS refs for STM32L432KC
+#include <stdint.h>
+#include <stm32l432xx.h>
 
 // Defines for USART case statements
-#define USART1_ID   1 //I do not understand why you need these identifiers, but use them because I saw them in the other .h files
-#define USART2_ID   2 //since identifiers are integers, all calls for this variable will be type "int"
+#define USART1_ID   1
+#define USART2_ID   2
 
 ///////////////////////////////////////////////////////////////////////////////
 // Function prototypes
