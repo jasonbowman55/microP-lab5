@@ -35,12 +35,13 @@ int _write(int file, char *ptr, int len) {
 #define interupt_flag   //the internal software flag that says there was an interupt that happened
 #define COUNT_TIM TIM2  //make TIM2 to be the counter timer
 #define DELAY_TIM TIM6  //make TIM6 to be the delay timer
-int delta = 0;       //the number of clock cycles per revolution
-int rps = 0;            //number of ms it took for 1 revolution
+int delta;       //the number of clock cycles per revolution
+int rps;            //number of ms it took for 1 revolution
 int PPR = 120;          //based on the data sheet
 int still = 1;          //1=not moving motor, 0=moving motor
 double C = 2*3.141592*(0.000157/2); //circumference of the motor shaft
 volatile int count;
+int dir;
 
 //********************************
 void GPIOinit() { //GPIO PA8 & PA6 enable
@@ -111,7 +112,7 @@ int main(void) {
         // else calculations for motor speed
         }else {
           if(rps == 0){
-            rps1 = 1/(double)(PPR*abs(delta)*4/1000.0); //calculate the new RPS
+            rps1 = 1/(double)(PPR*COUNT_TIM->CNT*4/1000.0); //calculate the new RPS
             rps2 = rps1;
             rps3 = rps1;
             rps4 = rps1;
@@ -119,7 +120,7 @@ int main(void) {
             rps1 = rps2;
             rps2 = rps3;
             rps3 = rps4;
-            rps4 = 1/(double)(PPR*abs(delta)*4/1000.0); //calculate the new RPS
+            rps4 = 1/(double)(PPR*COUNT_TIM->CNT*4/1000.0); //calculate the new RPS
           }
           rps = (rps1+rps2+rps3+rps4)/4;
         }
@@ -128,10 +129,10 @@ int main(void) {
     double speed_linear = rps*C; //calculate the m/s speed of the motor from rps
 
         //Printing values
-        if (delta > 0) {
+        if (dir == 0) {
           printf("Direction: Counter Clockwise, RPS: %.3f, Speed: %f m/s\n", rps, speed_linear); //CCW
             //CCW RPS
-        } else if (delta < 0) {
+        } else if (dir == 1) {
           printf("Direction: Clockwise, RPS: %.3f, Speed: %f m/s\n", rps, speed_linear); //CW
         } else {
           printf("Delta is zero, no rotation. m/s: %f\n", rps);
@@ -150,13 +151,13 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
   if (EXTI->PR1 & (1 << 8)){
     still = 0; //the motor is not still
     if((Binterupt==1) && (Ainterupt==1)){ //if a pulse occurs
-      delta = COUNT_TIM->CNT; //clock cycles going CW
+      //delta = COUNT_TIM->CNT; //clock cycles going CW
+      dir = 1;
        //printf("Delta1: %d\n", delta);
     }
     EXTI->PR1 |= (1 << 8); //clear the interupt flag
     COUNT_TIM->CNT = 0; //reset counter
   }
-  return;
 
 
 
@@ -164,10 +165,10 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
   if (EXTI->PR1 & (1 << 6)){
    still = 0; //the motor is not still
    if((Binterupt==1) && (Ainterupt==1)){ //if a pulse occurs
-      delta = -COUNT_TIM->CNT; //clock cycles going CCW
+      //delta = COUNT_TIM->CNT; //clock cycles going CCW
+      dir = 0;
     }
     EXTI->PR1 |= (1 << 6); //clear the interupt flag
     COUNT_TIM->CNT = 0;    //reset counter
   }
-  return;
 }
