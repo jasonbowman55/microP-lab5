@@ -65,8 +65,8 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="71" useTextEdit="1" path="main.c" left="0" selected="1" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="52" useTextEdit="1" path="lib/STM32L432KC_TIM.c" left="0" top="1" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="71" useTextEdit="1" path="main.c" left="0" selected="1" top="54" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="52" useTextEdit="1" path="lib/STM32L432KC_TIM.c" left="0" top="17" codecName="Default"/>
  </Files>
  <EMStudioWindow activeProject="lab5_jb_segger" fileDialogDefaultFilter="*" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="/Users/jasonbowman/Desktop/Micro-Ps/microP-lab5/MCU/SEGGER_proj/SEGGER_THUMB_Startup.s&#xa;C:/Users/jbowman/Desktop/microP-lab5/MCU/SEGGER_proj/SEGGER_THUMB_Startup.s&#xa;/Users/jasonbowman/Desktop/Micro-Ps/microP-lab5/MCU/SEGGER_proj/STM32L4xx/Source/STM32L4xx_Startup.s&#xa;&#xa;C:/Users/spenc/OneDrive/Documents/Desktop/HMC/microPs/microP-lab5/MCU/SEGGER_proj/CMSIS_5/CMSIS/Core/Include/cmsis_gcc.h&#xa;/Users/jasonbowman/Desktop/Micro-Ps/microP-lab5/MCU/SEGGER_proj/lib/STM32L432KC_RCC.h&#xa;C:\Users\spenc\OneDrive\Documents\Desktop\HMC\microPs\microP-lab5\MCU\SEGGER_proj/main.c&#xa;&#xa;C:\Users\spenc\OneDrive\Documents\Desktop\HMC\microPs\microP-lab5\MCU\SEGGER_proj\lib/STM32L432KC_RCC.c&#xa;/Users/jasonbowman/Desktop/Micro-Ps/microP-lab5/MCU/SEGGER_proj/lib/STM32L432KC_RCC.c" fileDialogInitialDirectory="/Users/jasonbowman/Desktop/Micro-Ps/microP-lab5/MCU/SEGGER_proj/lib" debugSearchPath="" autoConnectCapabilities="3711"/>
 </session>

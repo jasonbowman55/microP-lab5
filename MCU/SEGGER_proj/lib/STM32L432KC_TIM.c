@@ -20,7 +20,7 @@ void initTIM(TIM_TypeDef * TIMx){
 
 void initTIMfast(TIM_TypeDef * TIMx){
   // Set prescaler to give 1 ms time base
-  uint32_t psc_div = (uint32_t) ((SystemCoreClock/1e2));
+  uint32_t psc_div = (uint32_t) ((SystemCoreClock/1e3));
 
   TIMx->ARR |= (1073741822);
   // Set prescaler division factor

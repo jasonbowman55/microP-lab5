@@ -79,7 +79,7 @@ int main(void) {
   RCC->APB1ENR1 |= RCC_APB1ENR1_TIM6EN; //configure TIM6 and TIM2 to be on and connected to the SYSCLK
   RCC->APB1ENR1 |= RCC_APB1ENR1_TIM2EN; //configure TIM6 and TIM2 to be on and connected to the SYSCLK
   initTIM(DELAY_TIM);                   //initialize delay timer TIM6
-  initTIM(COUNT_TIM);                   //initialize counter timer TIM2
+  init_pico_TIM(COUNT_TIM);                   //initialize counter timer TIM2
 
    //__enable_irq(); // enable global interupts
   SYSCFG->EXTICR[2] |= SYSCFG_EXTICR3_EXTI8_PA; // Select PA8
@@ -147,12 +147,12 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
   int Binterupt = (GPIOA->IDR >> 6) & 0x1;  // Extract bit 6 (PA6)
   int Ainterupt = (GPIOA->IDR >> 8) & 0x1;  // Extract bit 8 (PA8)
 
-  count++;
+ // count++;
 
   //if A interupt happens
   if (EXTI->PR1 & (1 << 8)){
     still = 0; //the motor is not still
-    if((Binterupt==1) && (Ainterupt==1) && (count >= 4)){ //if a pulse occurs
+    if((Binterupt==1) && (Ainterupt==1)){ //&& (count >= 4)){ //if a pulse occurs
        delta = COUNT_TIM->CNT; //clock cycles going CW
        count = 0;
        COUNT_TIM->CNT = 0; //reset counter
@@ -164,7 +164,7 @@ void EXTI9_5_IRQHandler(void) { //outputs delta (the time between A=1 and B=1 in
   //if B interupt happens
   if (EXTI->PR1 & (1 << 6)){
    still = 0; //the motor is not still
-   if((Binterupt==1) && (Ainterupt==1) && (count >= 4)){ //if a pulse occurs
+   if((Binterupt==1) && (Ainterupt==1)){ //&& (count >= 4)){ //if a pulse occurs
       delta = COUNT_TIM->CNT; //clock cycles going CCW
       count = 0;
       COUNT_TIM->CNT = 0;    //reset counter
